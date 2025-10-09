@@ -26,7 +26,7 @@ class SettingsService:
             default_content_processing_engine_url=settings_data.get("default_content_processing_engine_url"),
             default_embedding_option=settings_data.get("default_embedding_option"),
             auto_delete_files=settings_data.get("auto_delete_files"),
-            youtube_preferred_languages=settings_data.get("youtube_preferred_languages"),
+            
         )
         
         return settings
@@ -38,7 +38,7 @@ class SettingsService:
             "default_content_processing_engine_url": settings.default_content_processing_engine_url,
             "default_embedding_option": settings.default_embedding_option,
             "auto_delete_files": settings.auto_delete_files,
-            "youtube_preferred_languages": settings.youtube_preferred_languages,
+            
         }
         
         settings_data = api_client.update_settings(**updates)
@@ -48,7 +48,6 @@ class SettingsService:
         settings.default_content_processing_engine_url = settings_data.get("default_content_processing_engine_url")
         settings.default_embedding_option = settings_data.get("default_embedding_option")
         settings.auto_delete_files = settings_data.get("auto_delete_files")
-        settings.youtube_preferred_languages = settings_data.get("youtube_preferred_languages")
         
         return settings
 

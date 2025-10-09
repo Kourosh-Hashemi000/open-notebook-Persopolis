@@ -18,8 +18,7 @@ async def get_settings():
             default_content_processing_engine_doc=settings.default_content_processing_engine_doc,
             default_content_processing_engine_url=settings.default_content_processing_engine_url,
             default_embedding_option=settings.default_embedding_option,
-            auto_delete_files=settings.auto_delete_files,
-            youtube_preferred_languages=settings.youtube_preferred_languages,
+            auto_delete_files=settings.auto_delete_files
         )
     except Exception as e:
         logger.error(f"Error fetching settings: {str(e)}")
@@ -41,8 +40,6 @@ async def update_settings(settings_update: SettingsUpdate):
             settings.default_embedding_option = settings_update.default_embedding_option
         if settings_update.auto_delete_files is not None:
             settings.auto_delete_files = settings_update.auto_delete_files
-        if settings_update.youtube_preferred_languages is not None:
-            settings.youtube_preferred_languages = settings_update.youtube_preferred_languages
         
         await settings.update()
         
@@ -51,7 +48,6 @@ async def update_settings(settings_update: SettingsUpdate):
             default_content_processing_engine_url=settings.default_content_processing_engine_url,
             default_embedding_option=settings.default_embedding_option,
             auto_delete_files=settings.auto_delete_files,
-            youtube_preferred_languages=settings.youtube_preferred_languages,
         )
     except HTTPException:
         raise
