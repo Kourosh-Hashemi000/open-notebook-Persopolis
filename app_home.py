@@ -15,7 +15,7 @@ load_dotenv()
 setup_page("📒 Open Notebook", sidebar_state="collapsed")
 
 if "object_id" not in st.query_params:
-    st.switch_page("pages/2_📒_Notebooks.py")
+    st.switch_page("pages/1_🏠_Home.py")
     st.stop()
 
 object_id = st.query_params["object_id"]

@@ -72,26 +72,81 @@ def notebook_page(current_notebook: Notebook):
     sources = sources_service.get_all_sources(notebook_id=current_notebook.id)
     notes = notes_service.get_all_notes(notebook_id=current_notebook.id)
 
-    notebook_header(current_notebook)
+    # NotebookLM-style header
+    st.markdown("""
+    <style>
+        .notebook-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 2rem;
+            border-radius: 1rem;
+            margin-bottom: 2rem;
+            color: white;
+        }
+        .notebook-title {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .notebook-description {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        .back-button {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            border-radius: 0.5rem;
+            padding: 0.5rem 1rem;
+            color: white;
+            cursor: pointer;
+            margin-bottom: 1rem;
+        }
+        .back-button:hover {
+            background: rgba(255,255,255,0.3);
+        }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # Back button
+    if st.button("← Back to notebooks", key="back_to_notebooks"):
+        st.session_state["current_notebook_id"] = None
+        st.switch_page("pages/1_🏠_Home.py")
+        st.rerun()
+    
+    # Notebook header
+    st.markdown(f"""
+    <div class="notebook-header">
+        <div class="notebook-title">{current_notebook.name}</div>
+        <div class="notebook-description">{current_notebook.description or 'No description provided'}</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-    work_tab, chat_tab = st.columns([4, 2])
-    with work_tab:
-        sources_tab, notes_tab = st.columns(2)
-        with sources_tab:
-            with st.container(border=True):
-                if st.button("Add Source", icon="➕"):
-                    add_source(current_notebook.id)
-                for source in sources:
-                    source_card(source=source, notebook_id=current_notebook.id)
+    # Three-column layout like NotebookLM
+    col1, col2, col3 = st.columns([1, 1, 1])
+    
+    with col1:
+        st.markdown("### 📚 Sources")
+        with st.container(border=True, height=600):
+            if st.button("+ Add Source", key="add_source_btn"):
+                add_source(current_notebook.id)
+            st.markdown("---")
+            for source in sources:
+                source_card(source=source, notebook_id=current_notebook.id)
+                st.markdown("---")
 
-        with notes_tab:
-            with st.container(border=True):
-                if st.button("Write a Note", icon="📝"):
-                    add_note(current_notebook.id)
-                for note in notes:
-                    note_card(note=note, notebook_id=current_notebook.id)
-    with chat_tab:
-        chat_sidebar(current_notebook=current_notebook, current_session=current_session)
+    with col2:
+        st.markdown("### 📝 Notes")
+        with st.container(border=True, height=600):
+            if st.button("+ Write a Note", key="add_note_btn"):
+                add_note(current_notebook.id)
+            st.markdown("---")
+            for note in notes:
+                note_card(note=note, notebook_id=current_notebook.id)
+                st.markdown("---")
+
+    with col3:
+        st.markdown("### 💬 Chat")
+        with st.container(border=True, height=600):
+            chat_sidebar(current_notebook=current_notebook, current_session=current_session)
 
 
 def notebook_list_item(notebook):
@@ -109,6 +164,39 @@ def notebook_list_item(notebook):
 if "current_notebook_id" not in st.session_state:
     st.session_state["current_notebook_id"] = None
 
+# Check if we're in create new mode
+if st.query_params.get("create_new") == "true":
+    st.title("📒 Create New Notebook")
+    st.caption(
+        "Notebooks are a great way to organize your thoughts, ideas, and sources. You can create notebooks for different research topics and projects, to create new articles, etc. "
+    )
+
+    with st.form("create_notebook_form"):
+        new_notebook_title = st.text_input("New Notebook Name", placeholder="Enter notebook name")
+        new_notebook_description = st.text_area(
+            "Description",
+            placeholder="Explain the purpose of this notebook. The more details the better.",
+        )
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.form_submit_button("Create Notebook", type="primary", use_container_width=True):
+                if new_notebook_title:
+                    notebook = notebook_service.create_notebook(
+                        name=new_notebook_title, description=new_notebook_description
+                    )
+                    st.session_state["current_notebook_id"] = notebook.id
+                    st.toast("Notebook created successfully", icon="📒")
+                    st.rerun()
+                else:
+                    st.error("Please enter a notebook name")
+        
+        with col2:
+            if st.form_submit_button("Cancel", use_container_width=True):
+                st.switch_page("pages/1_🏠_Home.py")
+    
+    st.stop()
+
 # todo: get the notebook, check if it exists and if it's archived
 if st.session_state["current_notebook_id"]:
     current_notebook: Notebook = notebook_service.get_notebook(st.session_state["current_notebook_id"])
@@ -118,33 +206,5 @@ if st.session_state["current_notebook_id"]:
     notebook_page(current_notebook)
     st.stop()
 
-st.title("📒 My Notebooks")
-st.caption(
-    "Notebooks are a great way to organize your thoughts, ideas, and sources. You can create notebooks for different research topics and projects, to create new articles, etc. "
-)
-
-with st.expander("➕ **New Notebook**"):
-    new_notebook_title = st.text_input("New Notebook Name")
-    new_notebook_description = st.text_area(
-        "Description",
-        placeholder="Explain the purpose of this notebook. The more details the better.",
-    )
-    if st.button("Create a new Notebook", icon="➕"):
-        notebook = notebook_service.create_notebook(
-            name=new_notebook_title, description=new_notebook_description
-        )
-        st.toast("Notebook created successfully", icon="📒")
-
-notebooks = notebook_service.get_all_notebooks(order_by="updated desc")
-archived_notebooks = [nb for nb in notebooks if nb.archived]
-
-for notebook in notebooks:
-    if notebook.archived:
-        continue
-    notebook_list_item(notebook)
-
-if len(archived_notebooks) > 0:
-    with st.expander(f"**🗃️ {len(archived_notebooks)} archived Notebooks**"):
-        st.write("ℹ Archived Notebooks can still be accessed and used in search.")
-        for notebook in archived_notebooks:
-            notebook_list_item(notebook)
+# If no notebook is selected and not creating new, redirect to home
+st.switch_page("pages/1_🏠_Home.py")
