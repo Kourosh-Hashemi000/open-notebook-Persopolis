@@ -247,6 +247,39 @@ def create_vscode_navigation():
     .stSidebar {
         width: 300px !important;
         min-width: 300px !important;
+        transition: width 0.3s ease !important;
+    }
+    
+    /* Collapsed sidebar state */
+    .stSidebar.collapsed {
+        width: 60px !important;
+        min-width: 60px !important;
+    }
+    
+    /* Main content area adjustments */
+    .main .block-container {
+        transition: margin-left 0.3s ease !important;
+    }
+    
+    /* When sidebar is collapsed, shift main content */
+    .stApp.sidebar-collapsed .main .block-container {
+        margin-left: 60px !important;
+    }
+    
+    /* When sidebar is expanded, normal margin */
+    .stApp.sidebar-expanded .main .block-container {
+        margin-left: 300px !important;
+    }
+    
+    /* Hide sidebar content when collapsed */
+    .stSidebar.collapsed .stMarkdown,
+    .stSidebar.collapsed .stButton {
+        display: none !important;
+    }
+    
+    /* Show only toggle button when collapsed */
+    .stSidebar.collapsed .sidebar-toggle {
+        display: block !important;
     }
     
     .css-1d391kg .stButton > button {
@@ -427,7 +460,50 @@ def create_vscode_navigation():
         }
     }
     
-    // Initialize sidebar state - removed problematic code that was hiding sidebar
+    // Sidebar collapse functionality
+    function toggleSidebar() {
+        const sidebar = document.querySelector('.stSidebar');
+        const mainContent = document.querySelector('.main .block-container');
+        const app = document.querySelector('.stApp');
+        
+        if (sidebar && mainContent && app) {
+            sidebar.classList.toggle('collapsed');
+            app.classList.toggle('sidebar-collapsed');
+            app.classList.toggle('sidebar-expanded');
+        }
+    }
+    
+    // Initialize sidebar state based on page
+    document.addEventListener('DOMContentLoaded', function() {
+        const sidebar = document.querySelector('.stSidebar');
+        const mainContent = document.querySelector('.main .block-container');
+        const app = document.querySelector('.stApp');
+        
+        if (sidebar && mainContent && app) {
+            // Check if we're on home page
+            const currentPath = window.location.pathname;
+            const isHomePage = currentPath.includes('Home') || currentPath === '/';
+            
+            if (isHomePage) {
+                // Keep sidebar expanded on home page
+                sidebar.classList.remove('collapsed');
+                app.classList.remove('sidebar-collapsed');
+                app.classList.add('sidebar-expanded');
+            } else {
+                // Check session state for other pages
+                const isCollapsed = window.parent.streamlit?.sessionState?.sidebar_collapsed || false;
+                if (isCollapsed) {
+                    sidebar.classList.add('collapsed');
+                    app.classList.add('sidebar-collapsed');
+                    app.classList.remove('sidebar-expanded');
+                } else {
+                    sidebar.classList.remove('collapsed');
+                    app.classList.remove('sidebar-collapsed');
+                    app.classList.add('sidebar-expanded');
+                }
+            }
+        }
+    });
     </script>
     """, unsafe_allow_html=True)
 
@@ -435,7 +511,22 @@ def create_vscode_sidebar():
     """Create VS Code-style collapsible sidebar using Streamlit components"""
     # Create a sidebar with navigation
     with st.sidebar:
-        st.markdown("### 📁 EXPLORER")
+        # Add toggle button for sidebar collapse (except on home page)
+        current_page = st.query_params.get("page", "home")
+        if current_page != "home":
+            col1, col2 = st.columns([1, 4])
+            with col1:
+                if st.button("☰", key="sidebar_toggle", help="Toggle Sidebar"):
+                    # Toggle sidebar state in session state
+                    if "sidebar_collapsed" not in st.session_state:
+                        st.session_state.sidebar_collapsed = False
+                    st.session_state.sidebar_collapsed = not st.session_state.sidebar_collapsed
+                    st.rerun()
+            with col2:
+                st.markdown("### 📁 EXPLORER")
+        else:
+            st.markdown("### 📁 EXPLORER")
+        
         st.markdown("---")
         
         # Navigation buttons with VS Code styling

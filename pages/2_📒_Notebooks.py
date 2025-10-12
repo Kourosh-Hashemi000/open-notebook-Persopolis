@@ -11,7 +11,19 @@ from pages.stream_app.source import add_source, source_card
 from pages.stream_app.utils import setup_page, setup_stream_state
 from pages.components.navigation import create_vscode_navigation, create_vscode_sidebar
 
-setup_page("📒 Open Notebook", only_check_mandatory_models=True, sidebar_state="expanded")
+# Set page config directly
+st.set_page_config(
+    page_title="📒 Open Notebook",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# Still need to check migration and auth
+from pages.stream_app.utils import check_migration, check_models
+from pages.stream_app.auth import check_password
+check_password()
+check_migration()
+check_models(only_mandatory=True)
 
 # Handle navigation from sidebar
 page_param = st.query_params.get("page")

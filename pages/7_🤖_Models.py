@@ -12,13 +12,18 @@ from pages.components.model_selector import model_selector
 from pages.stream_app.utils import setup_page
 from pages.components.navigation import create_vscode_navigation, create_vscode_sidebar
 
-setup_page(
-    "🤖 Models",
-    only_check_mandatory_models=False,
-    stop_on_model_error=False,
-    skip_model_check=True,
-    sidebar_state="expanded"
+# Set page config directly
+st.set_page_config(
+    page_title="🤖 Models",
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
+
+# Still need to check migration and auth
+from pages.stream_app.utils import check_migration
+from pages.stream_app.auth import check_password
+check_password()
+check_migration()
 
 # Handle navigation from sidebar
 page_param = st.query_params.get("page")

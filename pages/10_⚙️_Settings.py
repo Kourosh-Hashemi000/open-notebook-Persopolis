@@ -6,7 +6,18 @@ from api.settings_service import settings_service
 from pages.stream_app.utils import setup_page
 from pages.components.navigation import create_vscode_navigation, create_vscode_sidebar
 
-setup_page("⚙️ Settings", sidebar_state="expanded")
+# Set page config directly
+st.set_page_config(
+    page_title="⚙️ Settings",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# Still need to check migration and auth
+from pages.stream_app.utils import check_migration
+from pages.stream_app.auth import check_password
+check_password()
+check_migration()
 
 # Handle navigation from sidebar
 page_param = st.query_params.get("page")

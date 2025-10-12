@@ -11,7 +11,18 @@ from pages.components.navigation import create_vscode_navigation, create_vscode_
 # Initialize service instances
 models_service = ModelsService()
 
-setup_page("🔍 Search", sidebar_state="expanded")
+# Set page config directly
+st.set_page_config(
+    page_title="🔍 Search",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# Still need to check migration and auth
+from pages.stream_app.utils import check_migration
+from pages.stream_app.auth import check_password
+check_password()
+check_migration()
 
 # Handle navigation from sidebar
 page_param = st.query_params.get("page")
