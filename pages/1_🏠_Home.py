@@ -7,7 +7,18 @@ from api.notebook_service import notebook_service
 from pages.stream_app.utils import setup_page
 from pages.components.navigation import create_vscode_navigation, create_vscode_sidebar
 
-setup_page("Open Notebook", sidebar_state="expanded")
+# Try setting page config directly instead of using setup_page
+st.set_page_config(
+    page_title="Open Notebook",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# Still need to check migration and auth
+from pages.stream_app.utils import check_migration
+from pages.stream_app.auth import check_password
+check_password()
+check_migration()
 
 # Handle navigation from sidebar
 page_param = st.query_params.get("page")
@@ -28,10 +39,6 @@ create_vscode_navigation()
 
 # Create VS Code sidebar layout
 create_vscode_sidebar()
-
-# Test if sidebar is working - add a simple test
-with st.sidebar:
-    st.write("Sidebar Test - Can you see this?")
 
 # Main content area - no wrapper div to avoid empty space
 

@@ -225,24 +225,28 @@ def create_vscode_navigation():
         margin-top: 0 !important;
     }
     
-    /* Style Streamlit sidebar */
-    .css-1d391kg {
+    /* Force sidebar to be visible - multiple selectors */
+    .stSidebar,
+    [data-testid="stSidebar"],
+    .css-1d391kg,
+    .css-1cypcdb,
+    .css-17eq0hr {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
         background-color: var(--vscode-sidebar-background) !important;
         border-right: 1px solid var(--vscode-border) !important;
-        display: block !important;
-        visibility: visible !important;
     }
     
-    /* Ensure sidebar is visible */
+    /* Ensure sidebar container is visible */
+    .stApp > div:first-child {
+        display: flex !important;
+    }
+    
+    /* Make sure sidebar takes up space */
     .stSidebar {
-        display: block !important;
-        visibility: visible !important;
-    }
-    
-    /* Force sidebar to be visible */
-    [data-testid="stSidebar"] {
-        display: block !important;
-        visibility: visible !important;
+        width: 300px !important;
+        min-width: 300px !important;
     }
     
     .css-1d391kg .stButton > button {
