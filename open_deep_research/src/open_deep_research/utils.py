@@ -1,4 +1,10 @@
-"""Utility functions and helpers for the Deep Research agent."""
+"""Utility functions and helpers for the Deep Research agent.
+
+Wires together all external tools ODR uses such as: 
+
+Notebook Search, Tavily Search, Summarization, MCP Tools, Reflection Tool, Token cleanup & retrieval
+
+"""
 
 # modified from the normal! 
 import asyncio
@@ -174,9 +180,9 @@ async def notebook_web_search(
 notebook_web_search.metadata = {
     **(notebook_web_search.metadata or {}),
     "type": "search",
-    "name": "web_search",
+    "name": "notebook_search",
 }
-notebook_web_search.name = "web_search"
+notebook_web_search.name = "notebook_search"
 
 
 @tool(description=TAVILY_SEARCH_DESCRIPTION)
@@ -719,16 +725,36 @@ async def get_search_tool(search_api: SearchAPI):
         }
         return [search_tool]
         
-    elif search_api == SearchAPI.NOTEBOOK:
-        return [notebook_web_search]
-        
     elif search_api == SearchAPI.NONE:
         # No search functionality configured
         return []
         
     # Default fallback for unknown search API types
     return []
-    
+
+
+async def _get_notebook_search_tool(configurable: Configuration):
+    """Return notebook search tool if enabled in configuration."""
+    notebook_cfg = getattr(configurable, "notebook_search", None)
+    if not notebook_cfg or not notebook_cfg.enabled:
+        return None
+
+    bound_tool = notebook_web_search.bind(
+        max_results=notebook_cfg.max_results,
+        include_sources=notebook_cfg.include_sources,
+        include_notes=notebook_cfg.include_notes,
+    )
+    # Ensure tool metadata/name reflect notebook search identity
+    if hasattr(bound_tool, "metadata"):
+        bound_tool.metadata = {
+            **(getattr(bound_tool, "metadata", {}) or {}),
+            "type": "search",
+            "name": "notebook_search",
+        }
+    bound_tool.name = "notebook_search"
+    return bound_tool
+
+
 async def get_all_tools(config: RunnableConfig):
     """Assemble complete toolkit including research, search, and MCP tools.
     
@@ -743,9 +769,16 @@ async def get_all_tools(config: RunnableConfig):
     
     # Add configured search tools
     configurable = Configuration.from_runnable_config(config)
-    search_api = SearchAPI(get_config_value(configurable.search_api))
-    search_tools = await get_search_tool(search_api)
-    tools.extend(search_tools)
+
+    notebook_tool = await _get_notebook_search_tool(configurable)
+    if notebook_tool:
+        tools.append(notebook_tool)
+
+    search_api_value = get_config_value(configurable.search_api)
+    if search_api_value is not None:
+        search_api = SearchAPI(search_api_value)
+        search_tools = await get_search_tool(search_api)
+        tools.extend(search_tools)
     
     # Track existing tool names to prevent conflicts
     existing_tool_names = {

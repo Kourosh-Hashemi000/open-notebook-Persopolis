@@ -9,13 +9,59 @@ from pydantic import BaseModel, Field
 
 
 class SearchAPI(Enum):
-    """Enumeration of available search API providers."""
+    """Enumeration of available external search API providers."""
     
     ANTHROPIC = "anthropic"
     OPENAI = "openai"
     TAVILY = "tavily"
-    NOTEBOOK = "notebook"
     NONE = "none"
+
+
+class NotebookSearch(BaseModel):
+    """Configuration for notebook (Notebook LM) search capabilities."""
+
+    enabled: bool = Field(
+        default=True,
+        metadata={
+            "x_oap_ui_config": {
+                "type": "boolean",
+                "default": True,
+                "description": "Enable searching within Notebook LM content (sources and notes).",
+            }
+        },
+    )
+    max_results: int = Field(
+        default=6,
+        metadata={
+            "x_oap_ui_config": {
+                "type": "number",
+                "default": 6,
+                "min": 1,
+                "max": 20,
+                "description": "Maximum number of notebook search results to retrieve per query.",
+            }
+        },
+    )
+    include_sources: bool = Field(
+        default=True,
+        metadata={
+            "x_oap_ui_config": {
+                "type": "boolean",
+                "default": True,
+                "description": "Include notebook sources in search results.",
+            }
+        },
+    )
+    include_notes: bool = Field(
+        default=True,
+        metadata={
+            "x_oap_ui_config": {
+                "type": "boolean",
+                "default": True,
+                "description": "Include notebook notes in search results.",
+            }
+        },
+    )
 
 class MCPConfig(BaseModel):
     """Configuration for Model Context Protocol (MCP) servers."""
@@ -77,12 +123,12 @@ class Configuration(BaseModel):
     )
     # Research Configuration
     search_api: SearchAPI = Field(
-        default=SearchAPI.TAVILY,
+        default=SearchAPI.NONE,
         metadata={
             "x_oap_ui_config": {
                 "type": "select",
-                "default": "tavily",
-                "description": "Search API to use for research. NOTE: Make sure your Researcher Model supports the selected search API.",
+                "default": "none",
+                "description": "External web search provider to use. Disabled by default.",
                 "options": [
                     {"label": "Tavily", "value": SearchAPI.TAVILY.value},
                     {"label": "OpenAI Native Web Search", "value": SearchAPI.OPENAI.value},
@@ -91,6 +137,15 @@ class Configuration(BaseModel):
                 ]
             }
         }
+    )
+    notebook_search: NotebookSearch = Field(
+        default_factory=NotebookSearch,
+        metadata={
+            "x_oap_ui_config": {
+                "type": "group",
+                "description": "Notebook LM search configuration",
+            }
+        },
     )
     max_researcher_iterations: int = Field(
         default=6,
