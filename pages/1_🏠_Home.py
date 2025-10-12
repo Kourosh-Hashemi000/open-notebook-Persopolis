@@ -5,29 +5,39 @@ import random
 
 from api.notebook_service import notebook_service
 from pages.stream_app.utils import setup_page
-from pages.components.navigation import create_vscode_navigation, create_navigation_menu
+from pages.components.navigation import create_vscode_navigation, create_vscode_sidebar
 
-setup_page("Open Notebook", sidebar_state="collapsed")
+setup_page("Open Notebook", sidebar_state="expanded")
+
+# Handle navigation from sidebar
+page_param = st.query_params.get("page")
+if page_param:
+    if page_param == "notebooks":
+        st.switch_page("pages/2_📒_Notebooks.py")
+    elif page_param == "search":
+        st.switch_page("pages/3_🔍_Ask_and_Search.py")
+    elif page_param == "models":
+        st.switch_page("pages/7_🤖_Models.py")
+    elif page_param == "transformations":
+        st.switch_page("pages/8_💱_Transformations.py")
+    elif page_param == "settings":
+        st.switch_page("pages/10_⚙️_Settings.py")
 
 # Apply VS Code styling
 create_vscode_navigation()
 
-# Create navigation menu
-create_navigation_menu()
+# Create VS Code sidebar layout
+create_vscode_sidebar()
 
-# Main content area
-st.markdown("""
-<div style="padding: 20px; background-color: #1e1e1e; min-height: 100vh;">
-    <div style="max-width: 1200px; margin: 0 auto;">
-""", unsafe_allow_html=True)
+# Test if sidebar is working - add a simple test
+with st.sidebar:
+    st.write("Sidebar Test - Can you see this?")
 
-# Welcome section
-st.markdown("""
-<div style="text-align: center; margin-bottom: 40px;">
-    <h1 style="color: #cccccc; font-size: 2.5rem; margin-bottom: 10px;">📒 Open Notebook</h1>
-    <p style="color: #6a6a6a; font-size: 1.2rem;">Your AI-powered research and note-taking companion</p>
-</div>
-""", unsafe_allow_html=True)
+# Main content area - no wrapper div to avoid empty space
+
+# Welcome section - simplified
+st.title("📒 Open Notebook")
+st.caption("Your AI-powered research and note-taking companion")
 
 # Quick actions
 st.markdown("### Quick Actions")
@@ -82,19 +92,21 @@ try:
                 else:
                     created_date = "Unknown"
                 
-                # Create notebook card
+                # Create notebook card with darker blue gradient
                 st.markdown(f"""
                 <div style="
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    padding: 20px;
+                    background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+                    padding: 16px;
                     border-radius: 8px;
                     color: white;
-                    margin-bottom: 16px;
+                    margin-bottom: 12px;
                     cursor: pointer;
-                    transition: transform 0.2s ease-in-out;
-                " onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
-                    <h4 style="margin: 0 0 8px 0; font-size: 1.1rem;">{notebook.name}</h4>
-                    <p style="margin: 0 0 8px 0; opacity: 0.9; font-size: 0.9rem;">{notebook.description or 'No description'}</p>
+                    transition: all 0.2s ease-in-out;
+                    border: 1px solid #1e1b4b;
+                    box-shadow: 0 2px 8px rgba(49, 46, 129, 0.2);
+                " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 16px rgba(49, 46, 129, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(49, 46, 129, 0.2)'">
+                    <h4 style="margin: 0 0 6px 0; font-size: 1.1rem;">{notebook.name}</h4>
+                    <p style="margin: 0 0 6px 0; opacity: 0.9; font-size: 0.9rem;">{notebook.description or 'No description'}</p>
                     <p style="margin: 0; font-size: 0.8rem; opacity: 0.8;">{created_date} • {source_count} sources</p>
                 </div>
                 """, unsafe_allow_html=True)
@@ -114,32 +126,29 @@ col1, col2, col3 = st.columns(3)
 
 with col1:
     st.markdown("""
-    <div style="text-align: center; padding: 20px;">
-        <div style="font-size: 3rem; margin-bottom: 10px;">🤖</div>
-        <h4 style="color: #cccccc;">AI-Powered</h4>
-        <p style="color: #6a6a6a;">Leverage advanced AI models for intelligent insights and content generation</p>
+    <div style="text-align: center; padding: 16px; background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); border-radius: 8px; margin: 4px; border: 1px solid #1e1b4b; box-shadow: 0 2px 8px rgba(49, 46, 129, 0.2);">
+        <div style="font-size: 3rem; margin-bottom: 8px;">🤖</div>
+        <h4 style="color: white; margin: 0 0 6px 0;">AI-Powered</h4>
+        <p style="color: rgba(255,255,255,0.9); margin: 0; font-size: 0.9rem;">Leverage advanced AI models for intelligent insights and content generation</p>
     </div>
     """, unsafe_allow_html=True)
 
 with col2:
     st.markdown("""
-    <div style="text-align: center; padding: 20px;">
-        <div style="font-size: 3rem; margin-bottom: 10px;">📚</div>
-        <h4 style="color: #cccccc;">Organized</h4>
-        <p style="color: #6a6a6a;">Keep your research organized with notebooks, sources, and notes</p>
+    <div style="text-align: center; padding: 16px; background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); border-radius: 8px; margin: 4px; border: 1px solid #1e1b4b; box-shadow: 0 2px 8px rgba(49, 46, 129, 0.2);">
+        <div style="font-size: 3rem; margin-bottom: 8px;">📚</div>
+        <h4 style="color: white; margin: 0 0 6px 0;">Organized</h4>
+        <p style="color: rgba(255,255,255,0.9); margin: 0; font-size: 0.9rem;">Keep your research organized with notebooks, sources, and notes</p>
     </div>
     """, unsafe_allow_html=True)
 
 with col3:
     st.markdown("""
-    <div style="text-align: center; padding: 20px;">
-        <div style="font-size: 3rem; margin-bottom: 10px;">🔍</div>
-        <h4 style="color: #cccccc;">Searchable</h4>
-        <p style="color: #6a6a6a;">Find information quickly with powerful search capabilities</p>
+    <div style="text-align: center; padding: 16px; background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); border-radius: 8px; margin: 4px; border: 1px solid #1e1b4b; box-shadow: 0 2px 8px rgba(49, 46, 129, 0.2);">
+        <div style="font-size: 3rem; margin-bottom: 8px;">🔍</div>
+        <h4 style="color: white; margin: 0 0 6px 0;">Searchable</h4>
+        <p style="color: rgba(255,255,255,0.9); margin: 0; font-size: 0.9rem;">Find information quickly with powerful search capabilities</p>
     </div>
     """, unsafe_allow_html=True)
 
-st.markdown("""
-    </div>
-</div>
-""", unsafe_allow_html=True)
+# Removed wrapper div closing tags to eliminate empty space

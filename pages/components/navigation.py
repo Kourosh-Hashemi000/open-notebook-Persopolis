@@ -6,24 +6,24 @@ def create_vscode_navigation():
     # VS Code-style CSS
     st.markdown("""
     <style>
-    /* VS Code Dark Theme Colors */
+    /* VS Code Dark Theme Colors with Darker Blue Hue */
     :root {
-        --vscode-background: #1e1e1e;
-        --vscode-sidebar-background: #252526;
-        --vscode-activitybar-background: #333333;
-        --vscode-titlebar-background: #3c3c3c;
-        --vscode-text-foreground: #cccccc;
-        --vscode-text-disabled: #6a6a6a;
-        --vscode-border: #3c3c3c;
-        --vscode-focus-border: #007acc;
-        --vscode-button-background: #0e639c;
-        --vscode-button-hover: #1177bb;
-        --vscode-input-background: #3c3c3c;
-        --vscode-input-foreground: #cccccc;
-        --vscode-input-border: #3c3c3c;
+        --vscode-background: #0f0f23;
+        --vscode-sidebar-background: #0a0a1a;
+        --vscode-activitybar-background: #050510;
+        --vscode-titlebar-background: #0d0d1f;
+        --vscode-text-foreground: #c7d2fe;
+        --vscode-text-disabled: #4c4c6a;
+        --vscode-border: #1e1b4b;
+        --vscode-focus-border: #312e81;
+        --vscode-button-background: #1e1b4b;
+        --vscode-button-hover: #312e81;
+        --vscode-input-background: #1e1b4b;
+        --vscode-input-foreground: #c7d2fe;
+        --vscode-input-border: #1e1b4b;
     }
     
-    /* Main container */
+    /* Main container with collapsible sidebar */
     .vscode-container {
         display: flex;
         height: 100vh;
@@ -41,6 +41,11 @@ def create_vscode_navigation():
         flex-direction: column;
         align-items: center;
         padding: 8px 0;
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100vh;
+        z-index: 1000;
     }
     
     .activity-item {
@@ -65,13 +70,24 @@ def create_vscode_navigation():
         color: white;
     }
     
-    /* Sidebar */
+    /* Collapsible Sidebar */
     .sidebar {
         width: 300px;
         background-color: var(--vscode-sidebar-background);
         border-right: 1px solid var(--vscode-border);
         display: flex;
         flex-direction: column;
+        position: fixed;
+        left: 48px;
+        top: 0;
+        height: 100vh;
+        z-index: 999;
+        transition: transform 0.3s ease;
+        transform: translateX(0);
+    }
+    
+    .sidebar.collapsed {
+        transform: translateX(-100%);
     }
     
     .sidebar-header {
@@ -82,6 +98,23 @@ def create_vscode_navigation():
         text-transform: uppercase;
         letter-spacing: 0.5px;
         color: var(--vscode-text-disabled);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .sidebar-toggle {
+        background: none;
+        border: none;
+        color: var(--vscode-text-disabled);
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 2px;
+        transition: background-color 0.2s;
+    }
+    
+    .sidebar-toggle:hover {
+        background-color: var(--vscode-input-background);
     }
     
     .sidebar-content {
@@ -97,6 +130,8 @@ def create_vscode_navigation():
         display: flex;
         align-items: center;
         gap: 8px;
+        color: var(--vscode-text-foreground);
+        text-decoration: none;
     }
     
     .sidebar-item:hover {
@@ -108,11 +143,17 @@ def create_vscode_navigation():
         color: white;
     }
     
-    /* Main content area */
+    /* Main content area with sidebar offset */
     .main-content {
         flex: 1;
         background-color: var(--vscode-background);
         overflow: hidden;
+        margin-left: 48px;
+        transition: margin-left 0.3s ease;
+    }
+    
+    .main-content.sidebar-expanded {
+        margin-left: 348px;
     }
     
     /* Title bar */
@@ -168,10 +209,146 @@ def create_vscode_navigation():
         border-color: var(--vscode-focus-border);
     }
     
-    /* Hide Streamlit default elements */
+    /* Remove empty space at top */
     .main .block-container {
+        padding-top: 0 !important;
+        margin-top: 0 !important;
+    }
+    
+    .stApp > div {
+        padding-top: 0 !important;
+        margin-top: 0 !important;
+    }
+    
+    .stApp .main {
+        padding-top: 0 !important;
+        margin-top: 0 !important;
+    }
+    
+    /* Style Streamlit sidebar */
+    .css-1d391kg {
+        background-color: var(--vscode-sidebar-background) !important;
+        border-right: 1px solid var(--vscode-border) !important;
+        display: block !important;
+        visibility: visible !important;
+    }
+    
+    /* Ensure sidebar is visible */
+    .stSidebar {
+        display: block !important;
+        visibility: visible !important;
+    }
+    
+    /* Force sidebar to be visible */
+    [data-testid="stSidebar"] {
+        display: block !important;
+        visibility: visible !important;
+    }
+    
+    .css-1d391kg .stButton > button {
+        background-color: transparent;
+        color: var(--vscode-text-foreground);
+        border: 1px solid transparent;
+        border-radius: 4px;
+        margin: 2px 0;
+        width: 100%;
+        text-align: left;
+        padding: 8px 12px;
+        transition: all 0.2s ease;
+    }
+    
+    .css-1d391kg .stButton > button:hover {
+        background-color: var(--vscode-input-background);
+        border-color: var(--vscode-border);
+        transform: translateX(2px);
+    }
+    
+    /* Remove margins and gaps */
+    .element-container {
+        margin: 0;
         padding: 0;
-        max-width: none;
+    }
+    
+    .stButton > button {
+        margin: 0;
+        border-radius: 4px;
+        border: 1px solid var(--vscode-border);
+        background-color: var(--vscode-button-background);
+        color: var(--vscode-text-foreground);
+        transition: all 0.2s ease;
+    }
+    
+    .stButton > button:hover {
+        background-color: var(--vscode-button-hover);
+        border-color: var(--vscode-focus-border);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+    }
+    
+    /* Style input elements with blue hue */
+    .stTextInput > div > div > input {
+        background-color: var(--vscode-input-background);
+        color: var(--vscode-input-foreground);
+        border: 1px solid var(--vscode-input-border);
+        border-radius: 4px;
+    }
+    
+    .stTextInput > div > div > input:focus {
+        border-color: var(--vscode-focus-border);
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    }
+    
+    /* Style text areas */
+    .stTextArea > div > div > textarea {
+        background-color: var(--vscode-input-background);
+        color: var(--vscode-input-foreground);
+        border: 1px solid var(--vscode-input-border);
+        border-radius: 4px;
+    }
+    
+    .stTextArea > div > div > textarea:focus {
+        border-color: var(--vscode-focus-border);
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    }
+    
+    /* Style select boxes */
+    .stSelectbox > div > div > div {
+        background-color: var(--vscode-input-background);
+        color: var(--vscode-input-foreground);
+        border: 1px solid var(--vscode-input-border);
+        border-radius: 4px;
+    }
+    
+    /* Style containers with blue hue */
+    .stContainer {
+        background-color: var(--vscode-sidebar-background);
+        border: 1px solid var(--vscode-border);
+        border-radius: 6px;
+        padding: 12px;
+        margin: 4px 0;
+    }
+    
+    /* Style tabs */
+    .stTabs [data-baseweb="tab-list"] {
+        background-color: var(--vscode-sidebar-background);
+        border-bottom: 1px solid var(--vscode-border);
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        background-color: transparent;
+        color: var(--vscode-text-foreground);
+        border: none;
+        border-radius: 4px 4px 0 0;
+        margin-right: 2px;
+    }
+    
+    .stTabs [aria-selected="true"] {
+        background-color: var(--vscode-button-background);
+        color: white;
+    }
+    
+    .stTabs [data-baseweb="tab"]:hover {
+        background-color: var(--vscode-input-background);
     }
     
     #MainMenu {visibility: hidden;}
@@ -196,10 +373,10 @@ def create_vscode_navigation():
         background: var(--vscode-text-disabled);
     }
     
-    /* Navigation Menu */
+    /* Navigation Menu with Blue Hue */
     .nav-menu {
-        background-color: #252526;
-        border-bottom: 1px solid #3c3c3c;
+        background-color: var(--vscode-sidebar-background);
+        border-bottom: 1px solid var(--vscode-border);
         padding: 0;
         margin: 0;
         display: flex;
@@ -208,26 +385,72 @@ def create_vscode_navigation():
     
     .nav-item {
         padding: 8px 16px;
-        color: #cccccc;
+        color: var(--vscode-text-foreground);
         text-decoration: none;
         font-size: 13px;
         border: none;
         background: none;
         cursor: pointer;
-        transition: background-color 0.2s;
+        transition: all 0.2s ease;
+        border-radius: 4px;
+        margin: 2px;
     }
     
     .nav-item:hover {
-        background-color: #3c3c3c;
+        background-color: var(--vscode-input-background);
         color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
     }
     
     .nav-item.active {
-        background-color: #007acc;
+        background-color: var(--vscode-button-background);
         color: white;
+        box-shadow: 0 2px 8px rgba(49, 46, 129, 0.4);
     }
+    
+    /* JavaScript for sidebar toggle */
     </style>
+    
+    <script>
+    function toggleSidebar() {
+        const sidebar = document.querySelector('.sidebar');
+        const mainContent = document.querySelector('.main-content');
+        
+        if (sidebar && mainContent) {
+            sidebar.classList.toggle('collapsed');
+            mainContent.classList.toggle('sidebar-expanded');
+        }
+    }
+    
+    // Initialize sidebar state - removed problematic code that was hiding sidebar
+    </script>
     """, unsafe_allow_html=True)
+
+def create_vscode_sidebar():
+    """Create VS Code-style collapsible sidebar using Streamlit components"""
+    # Create a sidebar with navigation
+    with st.sidebar:
+        st.markdown("### 📁 EXPLORER")
+        st.markdown("---")
+        
+        # Navigation buttons with VS Code styling
+        nav_items = [
+            ("🏠", "Home", "pages/1_🏠_Home.py", "sidebar_home"),
+            ("📚", "Notebooks", "pages/2_📒_Notebooks.py", "sidebar_notebooks"),
+            ("🔍", "Search", "pages/3_🔍_Ask_and_Search.py", "sidebar_search"),
+            ("🤖", "Models", "pages/7_🤖_Models.py", "sidebar_models"),
+            ("💱", "Transformations", "pages/8_💱_Transformations.py", "sidebar_transformations"),
+            ("⚙️", "Settings", "pages/10_⚙️_Settings.py", "sidebar_settings")
+        ]
+        
+        for icon, name, page, key in nav_items:
+            if st.button(f"{icon} {name}", key=key, use_container_width=True):
+                st.switch_page(page)
+
+def close_vscode_layout():
+    """Close the VS Code layout - no longer needed with simplified approach"""
+    pass
 
 def create_navigation_menu():
     """Create a horizontal navigation menu using Streamlit buttons"""
@@ -259,3 +482,10 @@ def create_navigation_menu():
             st.switch_page("pages/10_⚙️_Settings.py")
     
     st.markdown("---")
+
+def close_vscode_layout():
+    """Close the VS Code layout"""
+    st.markdown("""
+        </div>
+    </div>
+    """, unsafe_allow_html=True)

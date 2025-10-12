@@ -6,18 +6,32 @@ from api.notes_service import notes_service
 from api.search_service import search_service
 from pages.components.model_selector import model_selector
 from pages.stream_app.utils import convert_source_references, setup_page
-from pages.components.navigation import create_vscode_navigation, create_navigation_menu
+from pages.components.navigation import create_vscode_navigation, create_vscode_sidebar
 
 # Initialize service instances
 models_service = ModelsService()
 
-setup_page("🔍 Search")
+setup_page("🔍 Search", sidebar_state="expanded")
+
+# Handle navigation from sidebar
+page_param = st.query_params.get("page")
+if page_param:
+    if page_param == "home":
+        st.switch_page("pages/1_🏠_Home.py")
+    elif page_param == "notebooks":
+        st.switch_page("pages/2_📒_Notebooks.py")
+    elif page_param == "models":
+        st.switch_page("pages/7_🤖_Models.py")
+    elif page_param == "transformations":
+        st.switch_page("pages/8_💱_Transformations.py")
+    elif page_param == "settings":
+        st.switch_page("pages/10_⚙️_Settings.py")
 
 # Apply VS Code styling
 create_vscode_navigation()
 
 # Create navigation menu
-create_navigation_menu()
+create_vscode_sidebar()
 
 ask_tab, search_tab = st.tabs(["Ask Your Knowledge Base (beta)", "Search"])
 

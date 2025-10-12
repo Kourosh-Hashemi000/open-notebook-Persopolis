@@ -4,15 +4,29 @@ import streamlit as st
 
 from api.settings_service import settings_service
 from pages.stream_app.utils import setup_page
-from pages.components.navigation import create_vscode_navigation, create_navigation_menu
+from pages.components.navigation import create_vscode_navigation, create_vscode_sidebar
 
-setup_page("⚙️ Settings")
+setup_page("⚙️ Settings", sidebar_state="expanded")
+
+# Handle navigation from sidebar
+page_param = st.query_params.get("page")
+if page_param:
+    if page_param == "home":
+        st.switch_page("pages/1_🏠_Home.py")
+    elif page_param == "notebooks":
+        st.switch_page("pages/2_📒_Notebooks.py")
+    elif page_param == "search":
+        st.switch_page("pages/3_🔍_Ask_and_Search.py")
+    elif page_param == "models":
+        st.switch_page("pages/7_🤖_Models.py")
+    elif page_param == "transformations":
+        st.switch_page("pages/8_💱_Transformations.py")
 
 # Apply VS Code styling
 create_vscode_navigation()
 
 # Create navigation menu
-create_navigation_menu()
+create_vscode_sidebar()
 
 st.header("⚙️ Settings")
 
