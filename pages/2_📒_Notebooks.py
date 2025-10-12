@@ -9,8 +9,15 @@ from pages.stream_app.chat import chat_sidebar
 from pages.stream_app.note import add_note, note_card
 from pages.stream_app.source import add_source, source_card
 from pages.stream_app.utils import setup_page, setup_stream_state
+from pages.components.navigation import create_vscode_navigation, create_navigation_menu
 
 setup_page("📒 Open Notebook", only_check_mandatory_models=True)
+
+# Apply VS Code styling
+create_vscode_navigation()
+
+# Create navigation menu
+create_navigation_menu()
 
 
 def notebook_header(current_notebook: Notebook):
@@ -21,7 +28,7 @@ def notebook_header(current_notebook: Notebook):
     c1.header(current_notebook.name)
     if c2.button("Back to the list", icon="🔙"):
         st.session_state["current_notebook_id"] = None
-        st.rerun()
+        st.switch_page("pages/1_🏠_Home.py")
 
     if c3.button("Refresh", icon="🔄"):
         st.rerun()
@@ -158,14 +165,14 @@ def notebook_list_item(notebook):
         st.write(notebook.description)
         if st.button("Open", key=f"open_notebook_{notebook.id}"):
             st.session_state["current_notebook_id"] = notebook.id
-            st.rerun()
+            st.switch_page("pages/2_📒_Notebooks.py")
 
 
 if "current_notebook_id" not in st.session_state:
     st.session_state["current_notebook_id"] = None
 
 # Check if we're in create new mode
-if st.query_params.get("create_new") == "true":
+if st.session_state.get("create_new_notebook", False):
     st.title("📒 Create New Notebook")
     st.caption(
         "Notebooks are a great way to organize your thoughts, ideas, and sources. You can create notebooks for different research topics and projects, to create new articles, etc. "
@@ -186,6 +193,7 @@ if st.query_params.get("create_new") == "true":
                         name=new_notebook_title, description=new_notebook_description
                     )
                     st.session_state["current_notebook_id"] = notebook.id
+                    st.session_state["create_new_notebook"] = False
                     st.toast("Notebook created successfully", icon="📒")
                     st.rerun()
                 else:
@@ -193,6 +201,7 @@ if st.query_params.get("create_new") == "true":
         
         with col2:
             if st.form_submit_button("Cancel", use_container_width=True):
+                st.session_state["create_new_notebook"] = False
                 st.switch_page("pages/1_🏠_Home.py")
     
     st.stop()

@@ -4,8 +4,15 @@ import streamlit as st
 
 from api.settings_service import settings_service
 from pages.stream_app.utils import setup_page
+from pages.components.navigation import create_vscode_navigation, create_navigation_menu
 
 setup_page("⚙️ Settings")
+
+# Apply VS Code styling
+create_vscode_navigation()
+
+# Create navigation menu
+create_navigation_menu()
 
 st.header("⚙️ Settings")
 

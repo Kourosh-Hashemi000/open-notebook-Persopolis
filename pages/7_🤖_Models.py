@@ -10,6 +10,7 @@ from esperanto import AIFactory
 from api.models_service import models_service
 from pages.components.model_selector import model_selector
 from pages.stream_app.utils import setup_page
+from pages.components.navigation import create_vscode_navigation, create_navigation_menu
 
 setup_page(
     "🤖 Models",
@@ -17,6 +18,12 @@ setup_page(
     stop_on_model_error=False,
     skip_model_check=True,
 )
+
+# Apply VS Code styling
+create_vscode_navigation()
+
+# Create navigation menu
+create_navigation_menu()
 
 
 st.title("🤖 Models")

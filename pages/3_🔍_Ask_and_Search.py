@@ -6,11 +6,18 @@ from api.notes_service import notes_service
 from api.search_service import search_service
 from pages.components.model_selector import model_selector
 from pages.stream_app.utils import convert_source_references, setup_page
+from pages.components.navigation import create_vscode_navigation, create_navigation_menu
 
 # Initialize service instances
 models_service = ModelsService()
 
 setup_page("🔍 Search")
+
+# Apply VS Code styling
+create_vscode_navigation()
+
+# Create navigation menu
+create_navigation_menu()
 
 ask_tab, search_tab = st.tabs(["Ask Your Knowledge Base (beta)", "Search"])
 

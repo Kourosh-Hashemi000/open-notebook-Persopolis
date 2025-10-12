@@ -4,8 +4,15 @@ from api.transformations_service import transformations_service
 from open_notebook.domain.transformation import DefaultPrompts, Transformation
 from pages.components.model_selector import model_selector
 from pages.stream_app.utils import setup_page
+from pages.components.navigation import create_vscode_navigation, create_navigation_menu
 
 setup_page("🧩 Transformations")
+
+# Apply VS Code styling
+create_vscode_navigation()
+
+# Create navigation menu
+create_navigation_menu()
 
 transformations_tab, playground_tab = st.tabs(["🧩 Transformations", "🛝 Playground"])
 

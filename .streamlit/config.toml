@@ -13,18 +13,18 @@ serverPort = 8502
 base = "dark"
 
 # # Primary accent color for interactive elements.
-primaryColor = "#1f77b4"
+primaryColor = "#007acc"
 
 # # Background color for the main content area.
-backgroundColor = "#0e1117"
+backgroundColor = "#1e1e1e"
 
 # # Background color used for the sidebar and most interactive widgets.
-secondaryBackgroundColor = "#262730"
+secondaryBackgroundColor = "#252526"
 
 # # Color used for almost all text.
-textColor = "#fafafa"
+textColor = "#cccccc"
 
 # # Font family for all text in the app, except code blocks. One of "sans serif",
 # # "serif", or "monospace".
-font = "sans serif"
+font = "Segoe UI, Tahoma, Geneva, Verdana, sans-serif"
 
