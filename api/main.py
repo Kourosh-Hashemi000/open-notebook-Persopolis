@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from api.auth import PasswordAuthMiddleware
 from api.routers import commands as commands_router
 from api.routers import (
+    chat,
     context,
     embedding,
     insights,
@@ -46,6 +47,7 @@ app.include_router(context.router, prefix="/api", tags=["context"])
 app.include_router(sources.router, prefix="/api", tags=["sources"])
 app.include_router(insights.router, prefix="/api", tags=["insights"])
 app.include_router(commands_router.router, prefix="/api", tags=["commands"])
+app.include_router(chat.router, prefix="/api", tags=["chat"])
 
 
 @app.get("/")
