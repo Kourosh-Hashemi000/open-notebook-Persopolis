@@ -29,7 +29,7 @@ import type {
 
 const api = axios.create({
   baseURL: getApiBaseUrl(),
-  timeout: 120000,
+  timeout: 10000, // Reduced from 120 seconds to 10 seconds
 });
 
 const unwrap = <T>(promise: Promise<{ data: T }>): Promise<T> =>

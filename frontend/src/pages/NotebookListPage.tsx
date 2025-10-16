@@ -22,9 +22,23 @@ const NotebookListPage = () => {
   const navigate = useNavigate();
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const { data, isLoading, isError } = useQuery<Notebook[]>({
+  const { data, isLoading, isError, error } = useQuery<Notebook[]>({
     queryKey: ["notebooks"],
-    queryFn: () => apiClient.getNotebooks(),
+    queryFn: async () => {
+      console.log('Fetching notebooks...');
+      try {
+        const result = await apiClient.getNotebooks();
+        console.log('Notebooks fetched successfully:', result);
+        return result;
+      } catch (err) {
+        console.error('Error fetching notebooks:', err);
+        throw err;
+      }
+    },
+    retry: 1,
+    retryDelay: 1000,
+    staleTime: 30000, // 30 seconds
+    gcTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const notebooks = [...(data ?? [])].sort((a, b) =>
@@ -55,7 +69,12 @@ const NotebookListPage = () => {
         )}
         {isError && !isLoading && (
           <div className="rounded-md border border-destructive/60 bg-destructive/10 p-4 text-sm text-destructive">
-            Failed to load notebooks. Ensure the API is running.
+            <div className="font-medium">Failed to load notebooks. Ensure the API is running.</div>
+            {error && (
+              <div className="mt-2 text-xs opacity-75">
+                Error: {error instanceof Error ? error.message : String(error)}
+              </div>
+            )}
           </div>
         )}
         {!isLoading && notebooks.length === 0 && (
