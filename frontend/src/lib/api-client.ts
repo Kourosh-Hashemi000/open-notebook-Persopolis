@@ -29,7 +29,7 @@ import type {
 
 const api = axios.create({
   baseURL: getApiBaseUrl(),
-  timeout: 120000,
+  timeout: 10000, // Reduced from 120 seconds to 10 seconds
 });
 
 const unwrap = <T>(promise: Promise<{ data: T }>): Promise<T> =>
@@ -89,6 +89,20 @@ export const apiClient = {
 
   getContext: (payload: ContextConfigRequest) =>
     unwrap<ContextResponse>(api.post(`/notebooks/${payload.notebook_id}/context`, payload)),
+
+  // Chat/Conversation API methods
+  get_chat_sessions: (notebookId: string) =>
+    unwrap<any[]>(api.get(`/notebooks/${notebookId}/chat-sessions`)),
+  create_chat_session: (notebookId: string, title: string) =>
+    unwrap<any>(api.post(`/notebooks/${notebookId}/chat-sessions`, { title, notebook_id: notebookId })),
+  get_chat_session: (sessionId: string) =>
+    unwrap<any>(api.get(`/chat-sessions/${sessionId}`)),
+  update_chat_session: (sessionId: string, title: string) =>
+    unwrap<any>(api.put(`/chat-sessions/${sessionId}`, { title })),
+  delete_chat_session: (sessionId: string) =>
+    api.delete(`/chat-sessions/${sessionId}`),
+  add_message_to_session: (sessionId: string, role: string, mode: string, content: string) =>
+    unwrap<any>(api.post(`/chat-sessions/${sessionId}/messages`, { role, mode, content })),
 };
 
 export const isAxiosError = (error: unknown): error is AxiosError => axios.isAxiosError(error);

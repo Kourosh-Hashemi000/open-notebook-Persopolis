@@ -341,6 +341,44 @@ class ChatSession(ObjectModel):
             raise InvalidInputError("Notebook ID must be provided")
         return await self.relate("refers_to", notebook_id)
 
+    async def get_messages(self) -> List["ChatMessage"]:
+        try:
+            messages = await repo_query(
+                """
+                select * from (
+                    select
+                    <- chat_message as chat_message
+                    from belongs_to
+                    where out=$id
+                    fetch chat_message
+                )
+                order by chat_message.created asc
+            """,
+                {"id": ensure_record_id(self.id)},
+            )
+            return (
+                [ChatMessage(**msg["chat_message"][0]) for msg in messages] if messages else []
+            )
+        except Exception as e:
+            logger.error(
+                f"Error fetching messages for chat session {self.id}: {str(e)}"
+            )
+            logger.exception(e)
+            raise DatabaseOperationError(e)
+
+
+class ChatMessage(ObjectModel):
+    table_name: ClassVar[str] = "chat_message"
+    role: str  # 'user' or 'assistant'
+    mode: str  # 'ask' or 'edit'
+    content: str
+    chat_session_id: Optional[str] = None
+
+    async def relate_to_chat_session(self, chat_session_id: str) -> Any:
+        if not chat_session_id:
+            raise InvalidInputError("Chat session ID must be provided")
+        return await self.relate("belongs_to", chat_session_id)
+
 
 async def text_search(
     keyword: str, results: int, source: bool = True, note: bool = True

@@ -209,6 +209,41 @@ class APIClient:
         """Delete a transformation."""
         return self._make_request("DELETE", f"/api/transformations/{transformation_id}")
 
+    # Chat/Conversation API methods
+    def get_chat_sessions(self, notebook_id: str) -> List[Dict]:
+        """Get all chat sessions for a notebook."""
+        return self._make_request("GET", f"/api/notebooks/{notebook_id}/chat-sessions")
+
+    def create_chat_session(self, notebook_id: str, title: str) -> Dict:
+        """Create a new chat session for a notebook."""
+        data = {
+            "title": title,
+            "notebook_id": notebook_id,
+        }
+        return self._make_request("POST", f"/api/notebooks/{notebook_id}/chat-sessions", json=data)
+
+    def get_chat_session(self, session_id: str) -> Dict:
+        """Get a specific chat session with its messages."""
+        return self._make_request("GET", f"/api/chat-sessions/{session_id}")
+
+    def update_chat_session(self, session_id: str, title: str) -> Dict:
+        """Update a chat session title."""
+        data = {"title": title}
+        return self._make_request("PUT", f"/api/chat-sessions/{session_id}", json=data)
+
+    def delete_chat_session(self, session_id: str) -> Dict:
+        """Delete a chat session and all its messages."""
+        return self._make_request("DELETE", f"/api/chat-sessions/{session_id}")
+
+    def add_message_to_session(self, session_id: str, role: str, mode: str, content: str) -> Dict:
+        """Add a message to a chat session."""
+        data = {
+            "role": role,
+            "mode": mode,
+            "content": content,
+        }
+        return self._make_request("POST", f"/api/chat-sessions/{session_id}/messages", json=data)
+
     def execute_transformation(
         self, transformation_id: str, input_text: str, model_id: str
     ) -> Dict:

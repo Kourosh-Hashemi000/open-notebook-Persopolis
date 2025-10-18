@@ -294,3 +294,35 @@ class CreateSourceInsightRequest(BaseModel):
 class ErrorResponse(BaseModel):
     error: str
     message: str
+
+
+# Chat/Conversation models
+class ChatMessageCreate(BaseModel):
+    role: Literal["user", "assistant"] = Field(..., description="Role of the message sender")
+    mode: Literal["ask", "edit"] = Field(..., description="Mode of the conversation")
+    content: str = Field(..., description="Content of the message")
+
+
+class ChatMessageResponse(BaseModel):
+    id: str
+    role: str
+    mode: str
+    content: str
+    created: str
+
+
+class ChatSessionCreate(BaseModel):
+    title: str = Field(..., description="Title of the chat session")
+    notebook_id: str = Field(..., description="ID of the notebook this session belongs to")
+
+
+class ChatSessionUpdate(BaseModel):
+    title: Optional[str] = Field(None, description="Title of the chat session")
+
+
+class ChatSessionResponse(BaseModel):
+    id: str
+    title: str
+    created: str
+    updated: str
+    messages: List[ChatMessageResponse] = Field(default_factory=list)

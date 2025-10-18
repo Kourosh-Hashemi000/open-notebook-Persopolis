@@ -1,4 +1,4 @@
-.PHONY: run check ruff database lint docker-build docker-build-dev docker-build-multi-test docker-build-multi-load docker-push docker-buildx-prepare docker-release api start-all stop-all status clean-cache docker-build-dev-clean docker-build-single-dev docker-build-single-multi-test docker-build-single docker-build-single-latest docker-release-single docker-release-both docker-release-all-versions
+.PHONY: run run-react run-react-only run-streamlit check ruff database lint docker-build docker-build-dev docker-build-multi-test docker-build-multi-load docker-push docker-buildx-prepare docker-release api start-all stop-all status clean-cache docker-build-dev-clean docker-build-single-dev docker-build-single-multi-test docker-build-single docker-build-single-latest docker-release-single docker-release-both docker-release-all-versions
 
 # Get version from pyproject.toml
 VERSION := $(shell grep -m1 version pyproject.toml | cut -d'"' -f2)
@@ -10,7 +10,34 @@ database:
 	docker compose up -d surrealdb
 
 run:
-	@echo "⚠️  Warning: Starting UI only. For full functionality, use 'make start-all'"
+	@echo "⚠️  Warning: Starting Streamlit UI only. For full functionality, use 'make start-all'"
+	PYTHONPATH=.:open_deep_research:$$PYTHONPATH uv run --env-file .env streamlit run app_home.py
+
+run-react:
+	@echo "⚛️  Starting React Frontend with Backend Services..."
+	@echo "📊 Starting SurrealDB..."
+	@docker compose up -d surrealdb
+	@sleep 3
+	@echo "🔧 Starting API backend..."
+	@PYTHONPATH=.:open_deep_research:$$PYTHONPATH uv run --env-file .env run_api.py &
+	@sleep 3
+	@echo "⚙️ Starting background worker..."
+	@PYTHONPATH=.:open_deep_research:$$PYTHONPATH uv run --env-file .env surreal-commands-worker --import-modules commands &
+	@sleep 2
+	@echo "⚛️ Starting React Frontend..."
+	@echo "✅ All services started!"
+	@echo "📱 React UI: http://localhost:5173"
+	@echo "🔗 API: http://localhost:5055"
+	@echo "📚 API Docs: http://localhost:5055/docs"
+	cd frontend && npm run dev
+
+run-react-only:
+	@echo "⚛️  Starting React Frontend only (no backend services)..."
+	@echo "⚠️  Warning: Backend services must be running separately for full functionality"
+	cd frontend && npm run dev
+
+run-streamlit:
+	@echo "📖 Starting Streamlit UI only..."
 	PYTHONPATH=.:open_deep_research:$$PYTHONPATH uv run --env-file .env streamlit run app_home.py
 
 lint:
@@ -106,7 +133,7 @@ worker-restart: worker-stop
 
 # === Service Management ===
 start-all:
-	@echo "🚀 Starting Open Notebook (Database + API + Worker + UI)..."
+	@echo "🚀 Starting Open Notebook (Database + API + Worker + React Frontend)..."
 	@echo "📊 Starting SurrealDB..."
 	@docker compose up -d surrealdb
 	@sleep 3
@@ -116,13 +143,13 @@ start-all:
 	@echo "⚙️ Starting background worker..."
 	@PYTHONPATH=.:open_deep_research:$$PYTHONPATH uv run --env-file .env surreal-commands-worker --import-modules commands &
 	@sleep 2
-	@echo "🌐 Starting Streamlit UI..."
+	@echo "⚛️ Starting React Frontend..."
 	@echo "✅ All services started!"
-	@echo "📱 UI: http://localhost:8502"
+	@echo "📱 React UI: http://localhost:5173"
 	@echo "🔗 API: http://localhost:5055"
 	@echo "📚 API Docs: http://localhost:5055/docs"
-	# @PYTHONPATH=.:open_deep_research:$$PYTHONPATH uv run --env-file .env streamlit run app_home.py --server.port 8502
-	npm run dev --prefix frontend
+	@echo "📖 Streamlit UI (legacy): http://localhost:8502"
+	cd frontend && npm run dev
 
 
 stop-all:
@@ -132,6 +159,7 @@ stop-all:
 	@pkill -f "run_api.py" || true
 	@pkill -f "uvicorn api.main:app" || true
 	@pkill -f "vite" || true
+	@pkill -f "npm run dev" || true
 	@docker compose down
 	@echo "✅ All services stopped!"
 
@@ -143,7 +171,9 @@ status:
 	@pgrep -f "run_api.py\|uvicorn api.main:app" >/dev/null && echo "  ✅ Running" || echo "  ❌ Not running"
 	@echo "Background Worker:"
 	@pgrep -f "surreal-commands-worker" >/dev/null && echo "  ✅ Running" || echo "  ❌ Not running"
-	@echo "Streamlit UI:"
+	@echo "React Frontend:"
+	@pgrep -f "vite\|npm run dev" >/dev/null && echo "  ✅ Running" || echo "  ❌ Not running"
+	@echo "Streamlit UI (legacy):"
 	@pgrep -f "streamlit run app_home.py" >/dev/null && echo "  ✅ Running" || echo "  ❌ Not running"
 
 # Clean up cache directories to reduce build context size

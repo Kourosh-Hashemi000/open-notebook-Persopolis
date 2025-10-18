@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useRef, type ChangeEvent, type FormEvent, type KeyboardEvent } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Loader2, Sparkles, Wand2, Check, X, Copy, RotateCcw } from 'lucide-react';
+import { Loader2, Sparkles, Wand2, Check, X, Copy, RotateCcw, Plus, History, Settings, MoreHorizontal, Maximize2, Paperclip, Send, ChevronDown, MessageSquare, Trash2, Edit3, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -27,6 +27,14 @@ type CopilotSuggestion = {
   isRejected: boolean;
 };
 
+type Conversation = {
+  id: string;
+  title: string;
+  messages: CopilotMessage[];
+  created: string;
+  updated: string;
+};
+
 const buildContextSummary = (context?: ContextResponse) => {
   if (!context) return 'No additional notebook context provided.';
   const sources = context.sources?.slice(0, 5) ?? [];
@@ -51,14 +59,161 @@ interface CopilotPanelProps {
 const CopilotPanel = ({ notebookId, draft, onDraftUpdate, context }: CopilotPanelProps) => {
   const [mode, setMode] = useState<CopilotMode>('ask');
   const [prompt, setPrompt] = useState('');
-  const [messages, setMessages] = useState<CopilotMessage[]>([]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [suggestion, setSuggestion] = useState<CopilotSuggestion | null>(null);
   const [isGeneratingSuggestion, setIsGeneratingSuggestion] = useState(false);
+  const [isEditingTitle, setIsEditingTitle] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState('');
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Get current conversation
+  const currentConversation = conversations.find(c => c.id === currentConversationId);
+  
+  // Load messages for current conversation only
+  // COMMENTED OUT FOR LOCAL-ONLY MODE
+  // const messagesQuery = useQuery({
+  //   queryKey: ['messages', currentConversationId],
+  //   queryFn: () => apiClient.get_chat_session(currentConversationId!),
+  //   enabled: !!currentConversationId,
+  //   staleTime: 2 * 60 * 1000, // 2 minutes
+  //   gcTime: 5 * 60 * 1000, // 5 minutes
+  // });
+
+  // const messages = (messagesQuery.data as any)?.messages || [];
+  
+  // Use local messages instead
+  const messages = currentConversation?.messages || [];
+
+  // Load conversations from database (without messages for performance)
+  // COMMENTED OUT FOR LOCAL-ONLY MODE
+  // const conversationsQuery = useQuery({
+  //   queryKey: ['conversations', notebookId],
+  //   queryFn: () => apiClient.get_chat_sessions(notebookId),
+  //   enabled: !!notebookId,
+  //   refetchOnWindowFocus: false,
+  //   staleTime: 5 * 60 * 1000, // 5 minutes
+  //   gcTime: 10 * 60 * 1000, // 10 minutes
+  // });
+
+  // Update local conversations when data loads
+  // COMMENTED OUT FOR LOCAL-ONLY MODE
+  // useEffect(() => {
+  //   if (conversationsQuery.data) {
+  //     const dbConversations = (conversationsQuery.data as any[]).map((conv: any) => ({
+  //       id: conv.id,
+  //       title: conv.title,
+  //       messages: [], // Don't load messages in list view
+  //       created: conv.created,
+  //       updated: conv.updated,
+  //     }));
+  //     setConversations(dbConversations);
+      
+  //     // If no current conversation is selected and we have conversations, select the first one
+  //     if (!currentConversationId && dbConversations.length > 0) {
+  //       setCurrentConversationId(dbConversations[0].id);
+  //     }
+  //   }
+  // }, [conversationsQuery.data, currentConversationId]);
 
   useEffect(() => {
     setPrompt('');
   }, [mode]);
+
+  // Conversation management functions
+  const createNewConversation = async () => {
+    // COMMENTED OUT FOR LOCAL-ONLY MODE
+    // try {
+    //   const response = await apiClient.create_chat_session(notebookId, 'New Chat');
+    //   const newConversation: Conversation = {
+    //     id: response.id,
+    //     title: response.title,
+    //     messages: [],
+    //     created: response.created,
+    //     updated: response.updated,
+    //   };
+      
+    //   // Update local state immediately
+    //   setConversations(prev => [newConversation, ...prev]);
+    //   setCurrentConversationId(newConversation.id);
+    // } catch (error) {
+    //   console.error('Failed to create conversation:', error);
+    // }
+    
+    // LOCAL-ONLY MODE: Create conversation in local state only
+    const newConversation: Conversation = {
+      id: `conv-${Date.now()}`,
+      title: 'New Chat',
+      messages: [],
+      created: new Date().toISOString(),
+      updated: new Date().toISOString(),
+    };
+    setConversations(prev => [newConversation, ...prev]);
+    setCurrentConversationId(newConversation.id);
+  };
+
+  const deleteConversation = async (conversationId: string) => {
+    // COMMENTED OUT FOR LOCAL-ONLY MODE
+    // try {
+    //   await apiClient.delete_chat_session(conversationId);
+    //   setConversations(prev => prev.filter(c => c.id !== conversationId));
+    //   if (currentConversationId === conversationId) {
+    //     const remaining = conversations.filter(c => c.id !== conversationId);
+    //     setCurrentConversationId(remaining.length > 0 ? remaining[0].id : null);
+    //   }
+    // } catch (error) {
+    //   console.error('Failed to delete conversation:', error);
+    // }
+    
+    // LOCAL-ONLY MODE: Delete from local state only
+    setConversations(prev => prev.filter(c => c.id !== conversationId));
+    if (currentConversationId === conversationId) {
+      const remaining = conversations.filter(c => c.id !== conversationId);
+      setCurrentConversationId(remaining.length > 0 ? remaining[0].id : null);
+    }
+  };
+
+  const updateConversationTitle = async (conversationId: string, newTitle: string) => {
+    // COMMENTED OUT FOR LOCAL-ONLY MODE
+    // try {
+    //   await apiClient.update_chat_session(conversationId, newTitle);
+    //   setConversations(prev =>
+    //     prev.map(c =>
+    //       c.id === conversationId
+    //         ? { ...c, title: newTitle, updated: new Date().toISOString() }
+    //         : c
+    //     )
+    //   );
+    //   setIsEditingTitle(null);
+    //   setEditingTitle('');
+    // } catch (error) {
+    //   console.error('Failed to update conversation title:', error);
+    // }
+    
+    // LOCAL-ONLY MODE: Update title in local state only
+    setConversations(prev =>
+      prev.map(c =>
+        c.id === conversationId
+          ? { ...c, title: newTitle, updated: new Date().toISOString() }
+          : c
+      )
+    );
+    setIsEditingTitle(null);
+    setEditingTitle('');
+  };
+
+  const startEditingTitle = (conversationId: string, currentTitle: string) => {
+    setIsEditingTitle(conversationId);
+    setEditingTitle(currentTitle);
+  };
+
+  const generateConversationTitle = (firstMessage: string) => {
+    // Simple title generation - take first 30 characters
+    return firstMessage.length > 30 
+      ? firstMessage.substring(0, 30) + '...' 
+      : firstMessage;
+  };
 
   const defaultsQuery = useQuery<DefaultModelsResponse>({
     queryKey: ['model-defaults'],
@@ -152,51 +307,132 @@ Suggest the next few lines or paragraph:`;
         final_answer_model: chatModelId,
       });
     },
-    onSuccess: (response, variables) => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `${Date.now()}-assistant`,
-          role: 'assistant',
-          mode: variables.mode,
-          content: response.answer,
-          createdAt: new Date().toISOString(),
-        },
-      ]);
-      if (variables.mode === 'edit' && onDraftUpdate) {
-        onDraftUpdate(response.answer);
-      }
-      setPrompt('');
-    },
+            onSuccess: async (response, variables) => {
+              const assistantMessage: CopilotMessage = {
+                id: `${Date.now()}-assistant`,
+                role: 'assistant',
+                mode: variables.mode,
+                content: response.answer,
+                createdAt: new Date().toISOString(),
+              };
+
+              // Save assistant message to database
+              // COMMENTED OUT FOR LOCAL-ONLY MODE
+              // if (currentConversationId) {
+              //   try {
+              //     await apiClient.add_message_to_session(
+              //       currentConversationId,
+              //       'assistant',
+              //       variables.mode,
+              //       response.answer
+              //     );
+              //   } catch (error) {
+              //     console.error('Failed to save assistant message:', error);
+              //   }
+
+              //   // Invalidate messages query to refetch
+              //   messagesQuery.refetch();
+
+              // LOCAL-ONLY MODE: Add assistant message to local state
+              if (currentConversationId) {
+                setConversations(prev =>
+                  prev.map(conv =>
+                    conv.id === currentConversationId
+                      ? {
+                          ...conv,
+                          messages: [...conv.messages, assistantMessage],
+                          updated: new Date().toISOString(),
+                          // Update title if this is the first message
+                          title: conv.messages.length === 0 && conv.title === 'New Chat'
+                            ? generateConversationTitle(variables.prompt)
+                            : conv.title
+                        }
+                      : conv
+                  )
+                );
+              }
+
+              if (variables.mode === 'edit' && onDraftUpdate) {
+                onDraftUpdate(response.answer);
+              }
+              setPrompt('');
+            },
     onError: (error, variables) => {
       const message = error instanceof Error ? error.message : 'Copilot request failed.';
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `${Date.now()}-assistant-error`,
-          role: 'assistant',
-          mode: variables.mode,
-          content: `⚠️ ${message}`,
-          createdAt: new Date().toISOString(),
-        },
-      ]);
+      const errorMessage: CopilotMessage = {
+        id: `${Date.now()}-assistant-error`,
+        role: 'assistant',
+        mode: variables.mode,
+        content: `⚠️ ${message}`,
+        createdAt: new Date().toISOString(),
+      };
+
+      // Update current conversation with error
+      if (currentConversationId) {
+        setConversations(prev => 
+          prev.map(conv => 
+            conv.id === currentConversationId 
+              ? { 
+                  ...conv, 
+                  messages: [...conv.messages, errorMessage],
+                  updated: new Date().toISOString()
+                }
+              : conv
+          )
+        );
+      }
     },
   });
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!prompt.trim()) return;
 
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: `${Date.now()}-user`,
-        role: 'user',
-        mode,
-        content: prompt.trim(),
-        createdAt: new Date().toISOString(),
-      },
-    ]);
+    // Create new conversation if none exists
+    if (!currentConversationId) {
+      await createNewConversation();
+    }
+
+    const userMessage: CopilotMessage = {
+      id: `${Date.now()}-user`,
+      role: 'user',
+      mode,
+      content: prompt.trim(),
+      createdAt: new Date().toISOString(),
+    };
+
+    // Save user message to database
+    // COMMENTED OUT FOR LOCAL-ONLY MODE
+    // if (currentConversationId) {
+    //   try {
+    //     await apiClient.add_message_to_session(
+    //       currentConversationId,
+    //       'user',
+    //       mode,
+    //       prompt.trim()
+    //     );
+    //   } catch (error) {
+    //     console.error('Failed to save user message:', error);
+    //   }
+
+    //   // Invalidate messages query to refetch
+    //   messagesQuery.refetch();
+    // }
+
+    // LOCAL-ONLY MODE: Add user message to local state
+    if (currentConversationId) {
+      setConversations(prev =>
+        prev.map(conv =>
+          conv.id === currentConversationId
+            ? {
+                ...conv,
+                messages: [...conv.messages, userMessage],
+                updated: new Date().toISOString()
+              }
+            : conv
+        )
+      );
+    }
 
     askMutation.mutate({ prompt: prompt.trim(), mode });
   };
@@ -206,134 +442,249 @@ Suggest the next few lines or paragraph:`;
   };
 
   return (
-    <div className="flex h-full flex-col gap-4">
-      <div>
-        <div className="text-sm font-semibold">Copilot</div>
-        <p className="text-xs text-muted-foreground">Ask questions or generate edits powered by your configured models.</p>
-      </div>
-      {!chatModelId && (
-        <div className="rounded-md border border-amber-300/60 bg-amber-100/40 p-3 text-xs text-amber-900">
-          No default chat model configured. Open the settings panel to select one before using the copilot.
+    <div className="relative h-full bg-background text-foreground overflow-hidden">
+      {/* History Sidebar - Overlay */}
+      <div className={`absolute left-0 top-0 h-full z-10 ${isSidebarCollapsed ? 'w-0' : 'w-64'} bg-card border-r border-border flex flex-col transition-all duration-300 overflow-hidden shadow-lg`}>
+        {/* Sidebar Header */}
+        <div className="p-3 border-b border-border">
+          <div className="flex items-center justify-between gap-2">
+            <Button 
+              onClick={createNewConversation}
+              className="flex-1"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              New Chat
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted"
+              onClick={() => setIsSidebarCollapsed(true)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
-      )}
-      <Tabs value={mode} onValueChange={(value) => setMode(value as CopilotMode)}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="ask" className="gap-1 text-xs">
-            <Sparkles className="h-4 w-4" /> Ask
-          </TabsTrigger>
-          <TabsTrigger value="edit" className="gap-1 text-xs">
-            <Wand2 className="h-4 w-4" /> Edit draft
-          </TabsTrigger>
-          <TabsTrigger value="suggest" className="gap-1 text-xs">
-            <Copy className="h-4 w-4" /> Suggest
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="ask" className="mt-3">
-          <form className="space-y-3" onSubmit={handleSubmit}>
-            <Textarea
-              ref={textareaRef}
-              placeholder="What do you want to know?"
-              value={prompt}
-              onChange={handlePromptChange}
-              onKeyDown={handleKeyDown}
-              rows={4}
-              disabled={askMutation.isPending || !chatModelId}
-            />
-            <Button type="submit" className="w-full" disabled={askMutation.isPending || !prompt.trim() || !chatModelId}>
-              {askMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-              Ask notebook
-            </Button>
-          </form>
-        </TabsContent>
-        <TabsContent value="edit" className="mt-3">
-          <form className="space-y-3" onSubmit={handleSubmit}>
-            <Textarea
-              ref={textareaRef}
-              placeholder="Describe the edits to apply to the draft (tone, structure, sections to update, etc.)."
-              value={prompt}
-              onChange={handlePromptChange}
-              onKeyDown={handleKeyDown}
-              rows={6}
-              disabled={askMutation.isPending || !chatModelId}
-            />
-            <Button type="submit" className="w-full" disabled={askMutation.isPending || !prompt.trim() || !chatModelId}>
-              {askMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
-              Generate edits
-            </Button>
-          </form>
-        </TabsContent>
-        <TabsContent value="suggest" className="mt-3">
-          <div className="space-y-3">
-            <div className="text-xs text-muted-foreground">
-              VS Code Copilot-like suggestions. Press <kbd className="px-1 py-0.5 text-xs bg-muted rounded">Ctrl+Enter</kbd> to generate suggestions, <kbd className="px-1 py-0.5 text-xs bg-muted rounded">Tab</kbd> to accept, <kbd className="px-1 py-0.5 text-xs bg-muted rounded">Esc</kbd> to reject.
-            </div>
-            <Textarea
-              ref={textareaRef}
-              placeholder="Start typing and press Ctrl+Enter for AI suggestions..."
-              value={prompt}
-              onChange={handlePromptChange}
-              onKeyDown={handleKeyDown}
-              rows={6}
-              disabled={!chatModelId}
-            />
-            <div className="flex gap-2">
-              <Button 
-                onClick={() => generateSuggestion(prompt)} 
-                disabled={isGeneratingSuggestion || !prompt.trim() || !chatModelId}
-                className="flex-1"
+
+        {/* Conversations List */}
+        <ScrollArea className="flex-1 p-2">
+          <div className="space-y-1">
+            {conversations.map((conversation) => (
+              <div
+                key={conversation.id}
+                className={`group relative rounded-md p-2 cursor-pointer transition-colors ${
+                  currentConversationId === conversation.id
+                    ? 'bg-accent border border-primary'
+                    : 'hover:bg-accent'
+                }`}
+                onClick={() => setCurrentConversationId(conversation.id)}
               >
-                {isGeneratingSuggestion ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Copy className="mr-2 h-4 w-4" />}
-                Generate Suggestion
-              </Button>
-              {suggestion?.isVisible && (
-                <>
-                  <Button onClick={acceptSuggestion} size="sm" variant="outline">
-                    <Check className="h-4 w-4" />
-                  </Button>
-                  <Button onClick={rejectSuggestion} size="sm" variant="outline">
-                    <X className="h-4 w-4" />
-                  </Button>
-                </>
-              )}
-            </div>
-            {suggestion?.isVisible && (
-              <div className="rounded-md border border-blue-200 bg-blue-50 p-3">
-                <div className="mb-2 flex items-center justify-between">
-                  <span className="text-xs font-medium text-blue-900">AI Suggestion</span>
-                  <div className="flex gap-1">
-                    <Button onClick={acceptSuggestion} size="sm" variant="ghost" className="h-6 px-2 text-xs">
-                      <Check className="mr-1 h-3 w-3" /> Accept
-                    </Button>
-                    <Button onClick={rejectSuggestion} size="sm" variant="ghost" className="h-6 px-2 text-xs">
-                      <X className="mr-1 h-3 w-3" /> Reject
-                    </Button>
+                <div className="flex items-center gap-2 min-w-0">
+                  <MessageSquare className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    {isEditingTitle === conversation.id ? (
+                      <input
+                        type="text"
+                        value={editingTitle}
+                        onChange={(e) => setEditingTitle(e.target.value)}
+                        onBlur={() => updateConversationTitle(conversation.id, editingTitle)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            updateConversationTitle(conversation.id, editingTitle);
+                          } else if (e.key === 'Escape') {
+                            setIsEditingTitle(null);
+                            setEditingTitle('');
+                          }
+                        }}
+                        className="w-full bg-transparent text-foreground text-sm border-none outline-none"
+                        autoFocus
+                      />
+                    ) : (
+                      <div
+                        className="text-sm text-foreground truncate"
+                        onDoubleClick={() => startEditingTitle(conversation.id, conversation.title)}
+                      >
+                        {conversation.title}
+                      </div>
+                    )}
+                    <div className="text-xs text-muted-foreground">
+                      {new Date(conversation.updated).toLocaleDateString()}
+                    </div>
                   </div>
                 </div>
-                <div className="text-sm text-blue-800 whitespace-pre-wrap">{suggestion.text}</div>
-              </div>
-            )}
-          </div>
-        </TabsContent>
-      </Tabs>
-      <div className="flex flex-col gap-2 text-xs text-muted-foreground">
-        <div className="font-medium text-foreground">History</div>
-        <ScrollArea className="max-h-60 flex-1 rounded-md border border-border/70 p-3">
-          <div className="flex flex-col gap-3 pr-2">
-            {messages.length === 0 && <p className="text-muted-foreground">No copilot exchanges yet.</p>}
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`rounded-md border p-3 text-xs ${message.role === 'user' ? 'border-primary/40 bg-primary/5 text-foreground' : 'border-secondary/50 bg-secondary/20 text-foreground'}`}
-              >
-                <div className="mb-1 flex items-center justify-between text-[10px] uppercase tracking-wide text-muted-foreground">
-                  <span>{message.role === 'user' ? 'You' : 'Copilot'} · {message.mode}</span>
-                  <span>{new Date(message.createdAt).toLocaleTimeString()}</span>
-                </div>
-                <div className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">{message.content}</div>
+                
+                {/* Delete Button */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-1 top-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground hover:bg-muted"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteConversation(conversation.id);
+                  }}
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
               </div>
             ))}
           </div>
         </ScrollArea>
+      </div>
+
+      {/* Backdrop for sidebar overlay */}
+      {!isSidebarCollapsed && (
+        <div 
+          className="absolute inset-0 bg-black/20 z-5"
+          onClick={() => setIsSidebarCollapsed(true)}
+        />
+      )}
+
+      {/* Floating toggle button when sidebar is collapsed */}
+      {isSidebarCollapsed && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="absolute left-4 top-4 z-20 h-6 w-6 p-0 text-muted-foreground hover:text-foreground hover:bg-muted"
+          onClick={() => setIsSidebarCollapsed(false)}
+        >
+          <PanelLeftOpen className="h-3 w-3" />
+        </Button>
+      )}
+
+      {/* Main Chat Area */}
+      <div className="w-full h-full flex flex-col">
+        {/* Header Bar */}
+        <div className="flex items-center justify-between border-b border-border px-4 py-3 flex-shrink-0">
+          <div className="flex-1"></div>
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-sm font-medium text-foreground whitespace-nowrap">
+              {currentConversation?.title || 'New Chat'}
+            </span>
+          </div>
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground hover:bg-muted">
+              <Settings className="h-3 w-3" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Chat Content */}
+        <div className="flex-1 flex flex-col">
+          {messages.length === 0 ? (
+            /* Welcome Screen */
+            <div className="flex-1 flex flex-col items-center justify-center px-6 text-center overflow-hidden">
+              <div className="max-w-md w-full">
+                <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+                  <Sparkles className="h-8 w-8 text-foreground" />
+                </div>
+                <h2 className="text-xl font-semibold text-foreground mb-2 leading-tight">AI Copilot</h2>
+                <p className="text-sm text-muted-foreground mb-6 leading-relaxed">Ask questions or generate edits powered by your research.</p>
+                <Button
+                  variant="link"
+                  className="p-0 h-auto text-sm leading-relaxed break-words"
+                  onClick={() => setPrompt("What insights can you provide about my research?")}
+                >
+                  What insights can you provide about my research?
+                </Button>
+              </div>
+            </div>
+          ) : (
+            /* Chat Messages */
+            <ScrollArea className="flex-1 px-4 py-4 overflow-hidden">
+              <div className="space-y-4 max-w-full">
+                {messages.map((message: any) => (
+                  <div key={message.id} className="flex gap-3 max-w-full">
+                    <div className="flex-shrink-0">
+                      {message.role === 'user' ? (
+                        <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
+                          <span className="text-xs font-medium text-primary-foreground">U</span>
+                        </div>
+                      ) : (
+                        <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+                          <Sparkles className="h-4 w-4 text-foreground" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0 max-w-full">
+                      <div className="text-sm text-muted-foreground mb-1 truncate">
+                        {message.role === 'user' ? 'You' : 'Copilot'} · {message.mode}
+                      </div>
+                      <div className="text-foreground whitespace-pre-wrap leading-relaxed break-words max-w-full">
+                        {message.content}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          )}
+
+          {/* Input Area */}
+          <div className="border-t border-border p-4 flex-shrink-0">
+            <Tabs value={mode} onValueChange={(value) => setMode(value as CopilotMode)}>
+              <TabsList className="grid w-full grid-cols-2 mb-3">
+                <TabsTrigger value="ask" className="gap-1 text-xs">
+                  <Sparkles className="h-4 w-4" /> Ask
+                </TabsTrigger>
+                <TabsTrigger value="edit" className="gap-1 text-xs">
+                  <Wand2 className="h-4 w-4" /> Edit
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="ask" className="mt-0">
+                <form className="space-y-3" onSubmit={handleSubmit}>
+                          <Textarea
+                            ref={textareaRef}
+                            placeholder="What do you want to know about your research?"
+                            value={prompt}
+                            onChange={handlePromptChange}
+                            onKeyDown={handleKeyDown}
+                            rows={3}
+                            className="resize-none"
+                            disabled={askMutation.isPending || !chatModelId}
+                          />
+                  <Button 
+                    type="submit" 
+                    className="w-full"
+                    disabled={askMutation.isPending || !prompt.trim() || !chatModelId}
+                  >
+                    {askMutation.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="mr-2 h-4 w-4" />
+                    )}
+                    Ask Copilot
+                  </Button>
+                </form>
+              </TabsContent>
+              <TabsContent value="edit" className="mt-0">
+                <form className="space-y-3" onSubmit={handleSubmit}>
+                          <Textarea
+                            ref={textareaRef}
+                            placeholder="Describe the edits to apply to your draft..."
+                            value={prompt}
+                            onChange={handlePromptChange}
+                            onKeyDown={handleKeyDown}
+                            rows={3}
+                            className="resize-none"
+                            disabled={askMutation.isPending || !chatModelId}
+                          />
+                  <Button 
+                    type="submit" 
+                    className="w-full"
+                    disabled={askMutation.isPending || !prompt.trim() || !chatModelId}
+                  >
+                    {askMutation.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Wand2 className="mr-2 h-4 w-4" />
+                    )}
+                    Generate Edits
+                  </Button>
+                </form>
+              </TabsContent>
+            </Tabs>
+          </div>
+        </div>
       </div>
     </div>
   );
